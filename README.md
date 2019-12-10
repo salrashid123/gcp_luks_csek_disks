@@ -30,7 +30,7 @@ Both encryption keys can be stored anywhere but at a minimum, the LUKS key needs
 The full flow outlined here:
 
 1. Generate LUKS and CSEK keys
-2. Upload keys to [Google Secret Manager](https://cloud.google.com/secrets/)
+2. Upload keys to [Google Secret Manager](https://cloud.google.com/secret-manager/docs/)
 3. Create Disk with CESK enabled
 4. Create GCE Service Account the VM will run as
 5. Set IAM permissions:
