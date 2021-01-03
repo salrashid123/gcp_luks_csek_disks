@@ -45,6 +45,12 @@ The full flow outlined here:
 
 The procedure here runs a startup script which attaches the CSEK disk and mounts a LUKS volume. Its not necessary to 'self-mount' the disk itself but it is necessary to do the luks decryption on the VM itself. 
 
+
+Also See other variations to mount persistent Disk with LUKS encryption:
+
+* [LUKS on COS with](https://gist.github.com/salrashid123/008371c75e303727214c1012939a0ace)
+* [LUKS on COS with Loopback](https://gist.github.com/salrashid123/c9a8e59b86e41329dd8f2052a38915f5)
+
 ### Setup
 
 - Set environment variables and enable Secrets Manager
