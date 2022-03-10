@@ -119,15 +119,53 @@ gcloud beta secrets add-iam-policy-binding luks --member=serviceAccount:$GCE_SER
 
 - Create the GCE instance
 
-```
-gcloud compute instances create gce-csek --service-account=$GCE_SERVICE_ACCOUNT --scopes=cloud-platform  --metadata enable-oslogin=FALSE,enable-oslogin-2fa=FALSE --metadata-from-file startup-script=startup.sh --image=debian-9-stretch-v20191121 --image-project=debian-cloud 
+```bash
+gcloud compute instances create gce-csek \
+  --service-account=$GCE_SERVICE_ACCOUNT --scopes=cloud-platform \
+  --metadata enable-oslogin=FALSE,enable-oslogin-2fa=FALSE \
+  --metadata-from-file startup-script=startup.sh \
+  --image=debian-10-buster-v20220303 --image-project=debian-cloud 
 
-gcloud compute instances add-iam-policy-binding gce-csek --member=serviceAccount:$GCE_SERVICE_ACCOUNT --role=roles/compute.instanceAdmin
+gcloud compute instances add-iam-policy-binding gce-csek \
+  --member=serviceAccount:$GCE_SERVICE_ACCOUNT --role=roles/compute.instanceAdmin
 ```
 
 The final step sets permissions on the VM to complete attaching the disk.
 
 Note: The last step has a potential race condition since we need to provision a GCE instance to allow the service account to perform operations on it "by itself" (i.,e the service account is itself attaching the encrypted disk).  The startup script attaches the disk which means the permission should propagate by then.  You don't ofcourse have to mount the CSEK disk inline on startup and are free to do omit that step.
+
+It may take a couple  (5?) of minutes for the script to finish...its just a demo so everything takes a bit longer (eg, running gcloud installer, some apt-libraries,etc).
+
+Note, you can modify the script to not await gcloud cli....you can just use raw rest apis or curl to acquire the `access_token` from the metadata server and use that to read back
+the luks secret using secret manager apis (the part that takes the longest in the startup script is the installation of bloatware (` google-cloud-sdk`))...
+
+```bash
+gcloud compute ssh gce-csek
+
+tail -f /var/log/daemon.log
+```
+
+anyway, you should have the following
+
+```
+# df -kh
+Filesystem                          Size  Used Avail Use% Mounted on
+udev                                1.8G     0  1.8G   0% /dev
+tmpfs                               371M  6.5M  364M   2% /run
+/dev/sda1                           9.8G  2.3G  7.1G  25% /
+tmpfs                               1.9G     0  1.9G   0% /dev/shm
+tmpfs                               5.0M     0  5.0M   0% /run/lock
+tmpfs                               1.9G     0  1.9G   0% /sys/fs/cgroup
+/dev/mapper/vault_encrypted_volume  9.8G   37M  9.3G   1% /media/vaultfs
+
+
+# lsblk -f
+NAME                     FSTYPE      LABEL UUID                                 MOUNTPOINT
+sda                                                                             
+└─sda1                   ext4              111be246-4eaa-43d5-ab49-38316fdf6a9a /
+sdb                      crypto_LUKS       3acd1275-b6df-4216-a8bf-e79451e538ae 
+└─vault_encrypted_volume ext4              3ba21b9a-07e0-4b6f-b601-62e4eaada066 /media/vaultfs
+```
 
 ---
 
